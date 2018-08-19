@@ -5,22 +5,24 @@ Mission Control is an application to enforce more complex Github Review rules.
 
 ## Getting Started
 
-##### Deploy the App
+### Setup Mission Control Server
+###### Deploy the App
 [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-##### Generate Credentials
+###### Generate Credentials
 * [Generate an Access Token](https://github.com/settings/tokens)
 * Generate a random string to be used as your Webhook Secret.
 
-##### Add Credentials to Mission Control
+###### Add Credentials to Mission Control
 * Go to your Heroku App and select Settings => Reveal Config Vars
 * Set `MISSION_CONTROL_GITHUB_ACCESS_TOKEN` to your Access Token generated above
 * Set `MISSION_CONTROL_GITHUB_WEBHOOK_SECRET` to your Webhook Secret generated above
 
-##### Setup `.mission-control.yml` File
+### Add Mission Control to a Project
+###### Setup `.mission-control.yml` File
 * Create a file with the correct format in the root of the project you would like to manage. See [Example](https://github.com/calendly/mission-control/blob/master/samples/.mission-control.yaml)
 
-##### Setup Webhook
+###### Setup Webhook
 * From your Github Project, select Settings => Webhooks => Add Webhook
 * Set `Payload URL` to `#{heroku_app_url}/hooks/github`
 * Set `Content Type` to `application/json`
@@ -28,13 +30,13 @@ Mission Control is an application to enforce more complex Github Review rules.
 * Select `Let me select individual events` and select `Pull Requests` and `Pull Request Reviews`
 * Save
 
-##### Configure Github
+###### Configure Github
 * You should configure github to have your branches (such as `master`) set to protected along with required status checks being enabled. You can view and manage your projects settings at Settings => Branches
 
 
 ## Contributing to Mission Control
 
-#### Run the App Locally
+###### Run the App Locally
 
 To run the app locally, you will need to setup a webhook that points to your local machine via a tool like ngrok or forwardhq. You should setup this webhook with a Webhook Secret. You will also need to generate a Github Access Token (as seen above).
 
@@ -51,7 +53,7 @@ bundle install
 bundle exec foreman start
 ````
 
-#### Running Specs
+###### Running Specs
 
 ````
 bundle install
