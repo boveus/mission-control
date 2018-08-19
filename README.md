@@ -33,7 +33,7 @@ Mission Control is an application to enforce more complex Github Review rules.
 ###### Configure Github
 * You should configure github to have your branches (such as `master`) set to protected along with required status checks being enabled. You can view and manage your projects settings at Settings => Branches
 
-## .mission-control.yml Format
+## Understanding the `.mission-control.yml` Format
 
 See the [example .mission-control.yml](https://github.com/calendly/mission-control/blob/master/example/.mission-control.yaml) to understand the basic layout and options that are allowed.
 
