@@ -11,6 +11,7 @@ gem 'sinatra', '2.0.3'
 group :test, :development do
   gem 'coveralls', '0.8.22'
   gem 'foreman', '0.85.0'
+  gem 'pry', '0.10.4'
   gem 'rspec', '3.8.0'
   gem 'rubocop', '0.58.2', require: false
   gem 'webmock', '3.4.2'
