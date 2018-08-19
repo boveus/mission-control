@@ -57,7 +57,7 @@ export MISSION_CONTROL_GITHUB_ACCESS_TOKEN=access_token
 export MISSION_CONTROL_GITHUB_WEBHOOK_SECRET=webhook_secret
 ````
 
-Then you can run the application
+###### Run the App
 
 ````
 bundle install
