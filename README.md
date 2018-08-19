@@ -35,7 +35,7 @@ Mission Control is an application to enforce more complex Github Review rules.
 
 ## Understanding the `.mission-control.yml` Format
 
-See the [example .mission-control.yml](https://github.com/calendly/mission-control/blob/master/example/.mission-control.yaml) to understand the basic layout and options that are allowed.
+See the [example .mission-control.yml](https://github.com/calendly/mission-control/blob/master/example/.mission-control.yml) to understand the basic layout and options that are allowed.
 
 Notes:
 * Users is required and indicates which users can provide this approval
@@ -64,14 +64,14 @@ bundle install
 bundle exec foreman start
 ````
 
-###### Running Specs
+###### Run the Specs
 
 ````
 bundle install
 bundle exec rspec
 ````
 
-###### Running Linter
+###### Run the Linter
 
 ````
 bundle install
