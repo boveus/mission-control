@@ -5,7 +5,7 @@ class MissionControlApp < Sinatra::Base
   use Rack::Runtime
 
   get '/' do
-    'Mission Control'
+    haml :index
   end
 
   post '/hooks/github' do

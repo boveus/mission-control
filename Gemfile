@@ -2,6 +2,7 @@ source 'https://rubygems.org'
 
 gem 'activesupport', :require => 'active_support'
 gem 'dotenv', '2.5.0'
+gem 'haml', '5.0.4'
 gem 'octokit', '4.10.0'
 gem 'pathspec', '0.2.1'
 gem 'puma', '3.12.0'
