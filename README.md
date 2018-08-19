@@ -10,7 +10,7 @@ Mission Control is an application to enforce more complex Github Review rules.
 
 ##### Generate Credentials
 * [Generate an Access Token](https://github.com/settings/tokens)
-* Create a random string to be used as your Webhook Secret.
+* Generate a random string to be used as your Webhook Secret.
 
 ##### Add Credentials to Mission Control
 * Go to your Heroku App and select Settings => Reveal Config Vars
