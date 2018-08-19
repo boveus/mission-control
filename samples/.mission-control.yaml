@@ -1,0 +1,23 @@
+- code_review:
+    name: 'Code Review'
+    count: 2
+    users:
+      - cboyle
+      - jperalta
+- qa_review:
+    name: 'QA Review'
+    users:
+      - asantiago
+      - tjeffords
+    paths:
+      - '*'
+      - '!README.md'
+      - '!spec/'
+      - '!.rspec'
+      - '!.gitignore'
+- mission_control_admin:
+    name: 'Mission Control Config Changes'
+    users:
+      - rholt
+    paths:
+      - '.mission-control.yml'
