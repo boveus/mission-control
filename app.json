@@ -1,0 +1,6 @@
+{
+  "name": "Mission Control",
+  "description": "Custom Github Review Enforcement",
+  "repository": "https://github.com/calendly/mission-control",
+  "keywords": ["ruby", "github", "code-review"]
+}
