@@ -59,3 +59,10 @@ bundle exec foreman start
 bundle install
 bundle exec rspec
 ````
+
+###### Running Linter
+
+````
+bundle install
+bundle exec rubocop
+````
