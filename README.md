@@ -2,6 +2,11 @@
 
 Mission Control is an application to enforce more complex Github Review rules.
 
+
+#### Getting Started
+
+[![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?env[MISSION_CONTROL_GITHUB_ACCESS_TOKEN]=access_token&env[MISSION_CONTROL_GITHUB_WEBHOOK_SECRET]=webhook_secret)
+
 #### Run the App Locally
 
 ````
