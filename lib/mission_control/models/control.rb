@@ -3,6 +3,8 @@ module MissionControl::Models
     def self.fetch(pull_request:)
       github = MissionControl::Services::GithubService.client
       response = github.content(pull_request.repo, :path => MissionControl::CONFIG_FILE)
+
+      return if response.nil? && response[:content].nil?
       controls = YAML.safe_load(Base64.decode64(response[:content]))
 
       controls.map do |control|

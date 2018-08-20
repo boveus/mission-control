@@ -49,6 +49,11 @@ describe MissionControl::Models::Control do
       allow(github_stub).to receive(:content).and_return(:content => Base64.encode64(config_file))
     end
 
+    it 'skip if no config file found in the repo' do
+      allow(github_stub).to receive(:content).and_return(nil)
+      expect(MissionControl::Models::Control).to_not receive(:new)
+    end
+
     it 'fetches controls from repo' do
       expect(github_stub).to receive(:content).with('calendly/mission-control', :path => '.mission-control.yml')
       controls = MissionControl::Models::Control.fetch(pull_request: pull_request)
