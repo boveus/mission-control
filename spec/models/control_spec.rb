@@ -127,8 +127,8 @@ describe MissionControl::Models::Control do
         allow(control).to receive(:active?).and_return(false)
       end
 
-      it 'no action' do
-        expect(pull_request).to_not receive(:status)
+      it 'set control approved in github' do
+        expect(pull_request).to receive(:status).with(state: 'success', name: name, description: 'Not Required')
         control.execute!
       end
     end

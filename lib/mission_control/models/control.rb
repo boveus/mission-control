@@ -39,15 +39,17 @@ module MissionControl::Models
     end
 
     def execute!
-      return unless active?
+      if active?
+        approvals = (pull_request.approvals & users)
 
-      approvals = (pull_request.approvals & users)
+        state = approvals.length < count ? 'pending' : 'success'
+        description = "#{approvals.length} of #{count}"
+        description += " (#{approvals.join(', ')})" unless approvals.empty?
 
-      state = approvals.length < count ? 'pending' : 'success'
-      description = "#{approvals.length} of #{count}"
-      description += " (#{approvals.join(', ')})" unless approvals.empty?
-
-      pull_request.status(state: state, name: name, description: description)
+        pull_request.status(state: state, name: name, description: description)
+      else
+        pull_request.status(state: 'success', name: name, description: 'Not Required')
+      end
     end
   end
 end
