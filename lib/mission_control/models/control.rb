@@ -39,17 +39,23 @@ module MissionControl::Models
     end
 
     def execute!
-      if active?
-        approvals = (pull_request.approvals & users)
+      active? ? execute_active! : execute_inactive!
+    end
 
-        state = approvals.length < count ? 'pending' : 'success'
-        description = "#{approvals.length} of #{count}"
-        description += " (#{approvals.join(', ')})" unless approvals.empty?
+    private
 
-        pull_request.status(state: state, name: name, description: description)
-      else
-        pull_request.status(state: 'success', name: name, description: 'Not Required')
-      end
+    def execute_active!
+      approvals = (pull_request.approvals & users)
+
+      state = approvals.length < count ? 'pending' : 'success'
+      description = "#{approvals.length} of #{count}"
+      description += " (#{approvals.join(', ')})" unless approvals.empty?
+
+      pull_request.status(state: state, name: name, description: description)
+    end
+
+    def execute_inactive!
+      pull_request.status(state: 'success', name: name, description: 'Not Required')
     end
   end
 end
