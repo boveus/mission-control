@@ -5,7 +5,7 @@ require './mission_control_app'
 if ENV['AIRBRAKE_PROJECT_ID'] && ENV['AIRBRAKE_API_KEY']
   Airbrake.configure do |config|
     config.environment = ENV['RACK_ENV']
-    config.ignore_environments = %w(development test)
+    config.ignore_environments = %w[development test]
 
     config.project_id = ENV['AIRBRAKE_PROJECT_ID']
     config.project_key = ENV['AIRBRAKE_API_KEY']
