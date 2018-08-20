@@ -15,8 +15,8 @@
       - '!spec/'
       - '!.rspec'
       - '!.gitignore'
-- mission_control_admin:
-    name: 'Mission Control Config Changes'
+- admin:
+    name: 'Admin'
     users:
       - rholt
     paths:
