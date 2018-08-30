@@ -62,42 +62,102 @@ describe MissionControl::Models::PullRequest do
       end
     end
 
-    context 'basic' do
-      let(:approvals) do
-        [
-          { :state => 'APPROVED', :user => { :login => 'jperalta' } },
-          { :state => 'APPROVED', :user => { :login => 'asantiago' } }
-        ]
-      end
+    context 'multiple approvals' do
+      context 'approve' do
+        let(:approvals) do
+          [
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+            { :state => 'APPROVED', :user => { :login => 'asantiago' } }
+          ]
+        end
 
-      it 'two approvals' do
-        expect(pull_request.approvals).to eq(%w[jperalta asantiago])
-      end
-    end
-
-    context 'review changed from approved to not approved' do
-      let(:approvals) do
-        [
-          { :state => 'APPROVED', :user => { :login => 'jperalta' } },
-          { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } }
-        ]
-      end
-
-      it 'no approvals' do
-        expect(pull_request.approvals).to eq([])
+        it 'two approvals' do
+          expect(pull_request.approvals).to eq(%w[jperalta asantiago])
+        end
       end
     end
 
-    context 'review changed from not approved to approved' do
-      let(:approvals) do
-        [
-          { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
-          { :state => 'APPROVED', :user => { :login => 'jperalta' } }
-        ]
+    context 'single approval' do
+      context 'approve, reject' do
+        let(:approvals) do
+          [
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+            { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'no approvals' do
+          expect(pull_request.approvals).to eq([])
+        end
       end
 
-      it 'one approval' do
-        expect(pull_request.approvals).to eq(['jperalta'])
+      context 'approve, comment' do
+        let(:approvals) do
+          [
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'one approval' do
+          expect(pull_request.approvals).to eq(['jperalta'])
+        end
+      end
+
+      context 'reject, approve' do
+        let(:approvals) do
+          [
+            { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'one approval' do
+          expect(pull_request.approvals).to eq(['jperalta'])
+        end
+      end
+
+      context 'reject, comment' do
+        let(:approvals) do
+          [
+            { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'no approvals' do
+          expect(pull_request.approvals).to eq([])
+        end
+      end
+
+      context 'approve, comment, reject, comment' do
+        let(:approvals) do
+          [
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } },
+            { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'no approvals' do
+          expect(pull_request.approvals).to eq([])
+        end
+      end
+
+      context 'reject, comment, approve, comment' do
+        let(:approvals) do
+          [
+            { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } },
+            { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+          ]
+        end
+
+        it 'one approval' do
+          expect(pull_request.approvals).to eq(['jperalta'])
+        end
       end
     end
   end
