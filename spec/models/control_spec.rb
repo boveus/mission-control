@@ -10,7 +10,8 @@ describe MissionControl::Models::Control do
       'action' => 'synchronize',
       'pull_request' => {
         'head' => { 'sha' => 'abc123', 'ref' => 'branch' },
-        'number' => '23'
+        'number' => '23',
+        'base' => { 'ref' => 'base_branch' }
       },
       'repository' => {
         'full_name' => 'calendly/mission-control'
@@ -55,7 +56,12 @@ describe MissionControl::Models::Control do
     end
 
     it 'fetches controls from repo' do
-      expect(github_stub).to receive(:content).with('calendly/mission-control', :path => '.mission-control.yml')
+      expect(github_stub).to receive(:content).with(
+        'calendly/mission-control',
+        :path => '.mission-control.yml',
+        :ref => 'base_branch'
+      )
+
       controls = MissionControl::Models::Control.fetch(pull_request: pull_request)
 
       expect(controls.length).to eq(3)

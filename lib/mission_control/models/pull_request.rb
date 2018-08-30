@@ -20,6 +20,10 @@ module MissionControl::Models
       @payload['pull_request']['head']['sha']
     end
 
+    def base_branch
+      @payload['pull_request']['base']['ref']
+    end
+
     # Functionality
     def approvals
       return @approvals unless @approvals.nil?
