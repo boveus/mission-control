@@ -26,7 +26,8 @@ module MissionControl::Models
     def self.execute!(pull_request:)
       controls = Control.fetch(pull_request: pull_request)
 
-      puts "Executing #{controls.length} Controls for #{pull_request.repo} on Pull Request: #{pull_request.pr_number}"
+      control_description = "repo: #{pull_request.repo} base_branch: #{pull_request.base_branch}"
+      puts "Executing #{controls.length} Controls | #{control_description} | PR: #{pull_request.pr_number}"
       controls.each(&:execute!)
     end
 
