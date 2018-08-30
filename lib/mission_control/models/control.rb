@@ -2,7 +2,11 @@ module MissionControl::Models
   class Control
     def self.fetch(pull_request:)
       github = MissionControl::Services::GithubService.client
-      response = github.content(pull_request.repo, :path => MissionControl::CONFIG_FILE)
+      response = github.content(
+        pull_request.repo,
+        :path => MissionControl::CONFIG_FILE,
+        :ref => pull_request.base_branch
+      )
 
       return if response.nil? && response[:content].nil?
       controls = YAML.safe_load(Base64.decode64(response[:content]))

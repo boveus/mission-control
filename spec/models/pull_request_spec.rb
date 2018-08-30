@@ -13,7 +13,8 @@ describe MissionControl::Models::PullRequest do
       'action' => 'pull_request',
       'pull_request' => {
         'head' => { 'sha' => 'abc123', 'ref' => 'branch' },
-        'number' => '23'
+        'number' => '23',
+        'base' => { 'ref' => 'base_branch' }
       },
       'repository' => {
         'full_name' => 'calendly/mission-control'
