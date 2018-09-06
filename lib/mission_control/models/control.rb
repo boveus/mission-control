@@ -55,8 +55,8 @@ module MissionControl::Models
       approvals = (pull_request.approvals & users)
 
       state = approvals.length < count ? 'pending' : 'success'
-      description = "#{approvals.length} of #{count}"
-      description += " (#{approvals.join(', ')})" unless approvals.empty?
+      description = "Required: #{count}"
+      description += " | Approved by: #{approvals.join(', ')}" unless approvals.empty?
 
       pull_request.status(state: state, name: name, description: description)
     end
