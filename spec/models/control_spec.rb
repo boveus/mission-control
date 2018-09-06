@@ -153,7 +153,12 @@ describe MissionControl::Models::Control do
         it 'set control approved in github' do
           allow(pull_request).to receive(:approvals).and_return(['aterris'])
 
-          expect(pull_request).to receive(:status).with(state: 'success', name: name, description: '1 of 1 (aterris)')
+          expect(pull_request).to receive(:status).with(
+            state: 'success',
+            name: name,
+            description: 'Required: 1 | Approved by: aterris'
+          )
+
           control.execute!
         end
       end
@@ -162,7 +167,12 @@ describe MissionControl::Models::Control do
         it 'set control pending in github' do
           allow(pull_request).to receive(:approvals).and_return(['jperalta'])
 
-          expect(pull_request).to receive(:status).with(state: 'pending', name: name, description: '0 of 1')
+          expect(pull_request).to receive(:status).with(
+            state: 'pending',
+            name: name,
+            description: 'Required: 1'
+          )
+
           control.execute!
         end
       end
@@ -173,7 +183,12 @@ describe MissionControl::Models::Control do
         it 'set control pending in github' do
           allow(pull_request).to receive(:approvals).and_return(['aterris'])
 
-          expect(pull_request).to receive(:status).with(state: 'pending', name: name, description: '1 of 2 (aterris)')
+          expect(pull_request).to receive(:status).with(
+            state: 'pending',
+            name: name,
+            description: 'Required: 2 | Approved by: aterris'
+          )
+
           control.execute!
         end
       end
