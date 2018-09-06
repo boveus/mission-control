@@ -31,7 +31,7 @@ module MissionControl::Models
       pr_reviews = github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
 
       last_reviews = {}
-      pr_reviews.reject! { |review| review[:state] == 'COMMENT' }
+      pr_reviews.reject! { |review| review[:state] == 'COMMENTED' }
       pr_reviews.each { |review| last_reviews[review[:user][:login]] = review[:state] }
 
       @approvals = (last_reviews.select { |_key, value| value == 'APPROVED' }).keys

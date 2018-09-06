@@ -95,7 +95,7 @@ describe MissionControl::Models::PullRequest do
         let(:approvals) do
           [
             { :state => 'APPROVED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } }
           ]
         end
 
@@ -121,7 +121,7 @@ describe MissionControl::Models::PullRequest do
         let(:approvals) do
           [
             { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } }
           ]
         end
 
@@ -134,9 +134,9 @@ describe MissionControl::Models::PullRequest do
         let(:approvals) do
           [
             { :state => 'APPROVED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } },
             { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } }
           ]
         end
 
@@ -149,9 +149,9 @@ describe MissionControl::Models::PullRequest do
         let(:approvals) do
           [
             { :state => 'CHANGES_REQUESTED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } },
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } },
             { :state => 'APPROVED', :user => { :login => 'jperalta' } },
-            { :state => 'COMMENT', :user => { :login => 'jperalta' } }
+            { :state => 'COMMENTED', :user => { :login => 'jperalta' } }
           ]
         end
 
