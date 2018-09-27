@@ -18,7 +18,8 @@ module MissionControl::Models
           name: control['name'],
           users: control['users'],
           paths: control['paths'],
-          count: control['count']
+          count: control['count'],
+          dismissal_paths: control['dismissal_paths']
         )
       end
     end
@@ -28,17 +29,19 @@ module MissionControl::Models
 
       control_description = "repo: #{pull_request.repo} base_branch: #{pull_request.base_branch}"
       puts "Executing #{controls.length} Controls | #{control_description} | PR: #{pull_request.pr_number}"
+      controls.each(&:dismiss_reviews!)
       controls.each(&:execute!)
     end
 
-    attr_accessor :pull_request, :name, :users, :paths, :count
+    attr_accessor :pull_request, :name, :users, :paths, :count, :dismissal_paths
 
-    def initialize(pull_request:, name:, users:, paths: '*', count: 1)
+    def initialize(pull_request:, name:, users:, paths: '*', count: 1, dismissal_paths: '*')
       @pull_request = pull_request
       @name = name
       @users = users
       @paths = paths || '*'
       @count = count || 1
+      @dismissal_paths = dismissal_paths || @paths
     end
 
     def active?
@@ -47,6 +50,14 @@ module MissionControl::Models
 
     def execute!
       active? ? execute_active! : execute_inactive!
+    end
+
+    def dismissable?
+      !PathSpec.from_lines(@dismissal_paths).match_paths(pull_request.changed_files).empty?
+    end
+
+    def dismiss_reviews!
+      execute_dismissals! if dismissable?
     end
 
     private
@@ -63,6 +74,14 @@ module MissionControl::Models
 
     def execute_inactive!
       pull_request.status(state: 'success', name: name, description: 'Not Required')
+    end
+
+    def execute_dismissals!
+      dismissals = pull_request.approved_reviews.select do |review|
+        users.include? review[:user][:login]
+      end
+
+      pull_request.dismiss(dismissals) unless dismissals.empty?
     end
   end
 end

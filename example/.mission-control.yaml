@@ -4,6 +4,12 @@
     users:
       - cboyle
       - jperalta
+    dismissal_paths:
+        - '*'
+        - '!README.md'
+        - '!spec/'
+        - '!.rspec'
+        - '!.gitignore'
 - qa_review:
     name: 'QA Review'
     users:

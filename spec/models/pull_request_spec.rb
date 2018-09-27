@@ -41,9 +41,9 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
-  describe '#commit' do
+  describe '#last_commit' do
     specify do
-      expect(pull_request.commit).to eq('abc123')
+      expect(pull_request.last_commit).to eq('abc123')
     end
   end
 
