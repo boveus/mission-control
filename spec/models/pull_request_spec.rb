@@ -29,6 +29,26 @@ describe MissionControl::Models::PullRequest do
     )
   end
 
+  let(:review) do
+    {
+      id: '123456789',
+      user: { login: 'aterris' },
+      state: 'APPROVED',
+      submitted_at: '2018-03-01 10:00:00 UTC'
+    }
+  end
+
+  let(:commit) do
+    {
+      sha: 'abc123',
+      commit: { committer: { date: '2018-02-01 10:00:00 UTC' } },
+      files: [
+        { sha: 'def456', filename: 'lib/mission_control.rb' },
+        { sha: 'ghi789', filename: 'README.md' }
+      ]
+    }
+  end
+
   describe '#repo' do
     specify do
       expect(pull_request.repo).to eq('calendly/mission-control')
@@ -47,7 +67,27 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
-  describe '#approvals' do
+  describe '#commits' do
+    specify do
+      allow(github_stub).to receive(:pull_request_commits).and_return([commit])
+      expect(pull_request.commits).to eq([commit])
+    end
+  end
+
+  describe '#base_branch' do
+    specify do
+      expect(pull_request.base_branch).to eq('base_branch')
+    end
+  end
+
+  describe '#reviews' do
+    specify do
+      allow(github_stub).to receive(:pull_request_reviews).and_return([review])
+      expect(pull_request.reviews).to eq([review])
+    end
+  end
+
+  describe '#approved_reviews' do
     let(:approvals) { [] }
 
     before do
@@ -58,7 +98,7 @@ describe MissionControl::Models::PullRequest do
       let(:approvals) { [] }
 
       it 'no approvals' do
-        expect(pull_request.approvals).to eq([])
+        expect(pull_request.approved_reviews).to eq([])
       end
     end
 
@@ -72,7 +112,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'two approvals' do
-          expect(pull_request.approvals).to eq(%w[jperalta asantiago])
+          expect(pull_request.approved_reviews).to eq(approvals)
         end
       end
     end
@@ -87,7 +127,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'no approvals' do
-          expect(pull_request.approvals).to eq([])
+          expect(pull_request.approved_reviews).to eq([])
         end
       end
 
@@ -100,7 +140,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'one approval' do
-          expect(pull_request.approvals).to eq(['jperalta'])
+          expect(pull_request.approved_reviews).to eq([approvals.first])
         end
       end
 
@@ -113,7 +153,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'one approval' do
-          expect(pull_request.approvals).to eq(['jperalta'])
+          expect(pull_request.approved_reviews).to eq([approvals[1]])
         end
       end
 
@@ -126,7 +166,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'no approvals' do
-          expect(pull_request.approvals).to eq([])
+          expect(pull_request.approved_reviews).to eq([])
         end
       end
 
@@ -141,7 +181,7 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'no approvals' do
-          expect(pull_request.approvals).to eq([])
+          expect(pull_request.approved_reviews).to eq([])
         end
       end
 
@@ -156,9 +196,23 @@ describe MissionControl::Models::PullRequest do
         end
 
         it 'one approval' do
-          expect(pull_request.approvals).to eq(['jperalta'])
+          expect(pull_request.approved_reviews).to eq([approvals[2]])
         end
       end
+    end
+  end
+
+  describe 'approvals' do
+    let(:approvals) do
+      [
+        { :state => 'APPROVED', :user => { :login => 'jperalta' } },
+        { :state => 'APPROVED', :user => { :login => 'asantiago' } }
+      ]
+    end
+
+    specify do
+      allow(pull_request).to receive(:approved_reviews).and_return(approvals)
+      expect(pull_request.approvals).to eq(%w[jperalta asantiago])
     end
   end
 
@@ -183,7 +237,95 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
-  describe 'status' do
+  describe '#new_commits' do
+    context 'no commits, no reviews' do
+      specify do
+        allow(pull_request).to receive(:reviews).and_return([])
+        allow(pull_request).to receive(:commits).and_return([])
+
+        expect(pull_request.new_commits).to eq([])
+      end
+    end
+
+    context 'commits with no reviews' do
+      specify do
+        allow(pull_request).to receive(:reviews).and_return([])
+        allow(pull_request).to receive(:commits).and_return([commit])
+
+        expect(pull_request.new_commits).to eq([commit])
+      end
+    end
+
+    context 'commits with review after' do
+      specify do
+        allow(pull_request).to receive(:reviews).and_return([review])
+        allow(pull_request).to receive(:commits).and_return([commit])
+
+        expect(pull_request.new_commits).to eq([])
+      end
+    end
+
+    context 'commits after a review' do
+      let(:review) do
+        {
+          id: '123456789',
+          user: { login: 'aterris' },
+          state: 'APPROVED',
+          submitted_at: '2018-01-02 10:00:00 UTC'
+        }
+      end
+
+      let(:prior_commit) do
+        {
+          sha: 'abc123',
+          commit: { committer: { date: '2018-01-01 10:00:00 UTC' } },
+          files: [
+            { sha: 'def456', filename: 'lib/mission_control.rb' },
+            { sha: 'ghi789', filename: 'README.md' }
+          ]
+        }
+      end
+
+      specify do
+        allow(pull_request).to receive(:reviews).and_return([review])
+        allow(pull_request).to receive(:commits).and_return([prior_commit, commit])
+
+        expect(pull_request.new_commits).to eq([commit])
+      end
+    end
+  end
+
+  describe '#changed_files' do
+    context 'no new commits' do
+      specify do
+        allow(pull_request).to receive(:new_commits).and_return([])
+
+        expect(pull_request.changed_files).to eq([])
+      end
+    end
+
+    context 'new commits with changed files' do
+      let(:another_commit) do
+        {
+          sha: 'jkl123',
+          commit: { committer: { date: '2018-02-02 10:00:00 UTC' } },
+          files: [
+            { sha: 'mno456', filename: 'spec/mission_control_spec.rb' },
+            { sha: 'pqr789', filename: 'README.md' }
+          ]
+        }
+      end
+
+      specify do
+        allow(pull_request).to receive(:new_commits).and_return([commit, another_commit])
+        allow(github_stub).to receive(:commit).and_return(commit, another_commit)
+
+        expect(pull_request.changed_files).to eq(%w[/lib/mission_control.rb /README.md /spec/mission_control_spec.rb])
+      end
+    end
+  end
+
+  describe '#status' do
     it 'create github status' do
       expect(github_stub).to receive(:create_status).with(
         'calendly/mission-control',
@@ -194,6 +336,19 @@ describe MissionControl::Models::PullRequest do
       )
 
       pull_request.status(state: 'success', name: 'code-review', description: '1 of 1 (jperalta)')
+    end
+  end
+
+  describe '#dismiss' do
+    it 'dismisses a review and re-requests reviews' do
+      expect(github_stub).to receive(:dismiss_pull_request_review).with(
+        'calendly/mission-control', '23', '123456789', 'Dismissed by Mission Control'
+      )
+
+      expect(github_stub).to receive(:pull_request_reviews).with(
+        'calendly/mission-control', '23', :accept => 'application/vnd.github.v3+json'
+      )
+      pull_request.dismiss([review])
     end
   end
 end
