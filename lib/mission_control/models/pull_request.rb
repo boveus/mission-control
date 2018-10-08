@@ -34,16 +34,14 @@ module MissionControl::Models
 
     # Functionality
     def approved_reviews
-      return @approved_reviews unless @approved_reviews.nil?
-      @approved_reviews = reviews
-                          .reject { |review| review[:state] == 'COMMENTED' }
-                          .reverse.uniq { |review| review[:user][:login] }.reverse
-                          .select { |review| review[:state] == 'APPROVED' }
+      reviews
+        .reject { |review| review[:state] == 'COMMENTED' }
+        .reverse.uniq { |review| review[:user][:login] }.reverse
+        .select { |review| review[:state] == 'APPROVED' }
     end
 
     def approvals
-      return @approvals unless @approvals.nil?
-      @approvals = approved_reviews.map { |review| review[:user][:login] }
+      approved_reviews.map { |review| review[:user][:login] }
     end
 
     def files
@@ -81,6 +79,8 @@ module MissionControl::Models
       reviews.each do |review|
         github.dismiss_pull_request_review(repo, pr_number, review[:id], 'Dismissed by Mission Control')
       end
+
+      @reviews = github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
     end
 
     private
