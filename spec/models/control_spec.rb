@@ -106,6 +106,13 @@ describe MissionControl::Models::Control do
     end
   end
 
+  describe '#initialize' do
+    let(:dismissal_paths) { nil }
+    it 'dismissal path defaults to paths' do
+      expect(control.dismissal_paths).to eq(paths)
+    end
+  end
+
   describe '#active?' do
     context 'all paths' do
       let(:paths) { '*' }

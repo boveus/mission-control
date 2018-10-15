@@ -49,16 +49,13 @@ module MissionControl::Models
     end
 
     def new_commits
-      return @new_commits unless @new_commits.nil?
+      return commits if reviews.empty?
 
-      @new_commits =
-        if reviews.empty?
-          commits
-        else
-          commits.reject do |commit|
-            commit[:commit][:committer][:date] < reviews.last[:submitted_at]
-          end
-        end
+      index = commits.find_index do |commit|
+        commit[:sha] == reviews.last[:commit_id]
+      end
+
+      index.nil? ? commits : commits[index + 1..-1]
     end
 
     def changed_files
@@ -80,7 +77,7 @@ module MissionControl::Models
         github.dismiss_pull_request_review(repo, pr_number, review[:id], 'Dismissed by Mission Control')
       end
 
-      @reviews = github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
+      @reviews = nil
     end
 
     private

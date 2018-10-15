@@ -35,7 +35,7 @@ module MissionControl::Models
 
     attr_accessor :pull_request, :name, :users, :paths, :count, :dismissal_paths
 
-    def initialize(pull_request:, name:, users:, paths: '*', count: 1, dismissal_paths: '*')
+    def initialize(pull_request:, name:, users:, paths: '*', count: 1, dismissal_paths: nil)
       @pull_request = pull_request
       @name = name
       @users = users
@@ -45,7 +45,7 @@ module MissionControl::Models
     end
 
     def active?
-      !PathSpec.from_lines(@paths).match_paths(pull_request.files).empty?
+      PathSpec.from_lines(@paths).match_paths(pull_request.files).any?
     end
 
     def execute!
@@ -53,7 +53,7 @@ module MissionControl::Models
     end
 
     def dismissable?
-      !PathSpec.from_lines(@dismissal_paths).match_paths(pull_request.changed_files).empty?
+      PathSpec.from_lines(@dismissal_paths).match_paths(pull_request.changed_files).any?
     end
 
     def dismiss_reviews!

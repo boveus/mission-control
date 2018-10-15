@@ -32,21 +32,30 @@ describe MissionControl::Models::PullRequest do
   let(:review) do
     {
       id: '123456789',
+      commit_id: review_commit_id,
       user: { login: 'aterris' },
       state: 'APPROVED',
-      submitted_at: '2018-03-01 10:00:00 UTC'
+      submitted_at: submitted_at_date
     }
   end
+  let(:review_commit_id) { 'abc123' }
 
   let(:commit) do
     {
-      sha: 'abc123',
-      commit: { committer: { date: '2018-02-01 10:00:00 UTC' } },
-      files: [
-        { sha: 'def456', filename: 'lib/mission_control.rb' },
-        { sha: 'ghi789', filename: 'README.md' }
-      ]
+      sha: commit_sha,
+      commit: { committer: { date: committer_date } },
+      files: files
     }
+  end
+  let(:commit_sha) { 'abc123' }
+
+  let(:submitted_at_date) { '2018-03-01 10:00:00 UTC' }
+  let(:committer_date) { '2018-02-01 10:00:00 UTC' }
+  let(:files) do
+    [
+      { sha: 'def456', filename: 'lib/mission_control.rb' },
+      { sha: 'ghi789', filename: 'README.md' }
+    ]
   end
 
   describe '#repo' do
@@ -238,59 +247,57 @@ describe MissionControl::Models::PullRequest do
   end
 
   describe '#new_commits' do
-    context 'no commits, no reviews' do
-      specify do
-        allow(pull_request).to receive(:reviews).and_return([])
-        allow(pull_request).to receive(:commits).and_return([])
+    let(:reviews) { [] }
+    let(:commits) { [] }
 
-        expect(pull_request.new_commits).to eq([])
+    before do
+      allow(pull_request).to receive(:reviews).and_return(reviews)
+      allow(pull_request).to receive(:commits).and_return(commits)
+    end
+
+    context 'no reviews' do
+      context 'no commits, no reviews' do
+        specify do
+          expect(pull_request.new_commits).to eq([])
+        end
+      end
+
+      context 'commits with no reviews' do
+        let(:commits) { [commit] }
+
+        specify do
+          expect(pull_request.new_commits).to eq([commit])
+        end
       end
     end
 
-    context 'commits with no reviews' do
-      specify do
-        allow(pull_request).to receive(:reviews).and_return([])
-        allow(pull_request).to receive(:commits).and_return([commit])
+    context 'reviews' do
+      let(:reviews) { [review] }
+      let(:commits) { [commit, another_commit] }
+      let(:another_commit) { { sha: 'another_commit_sha' } }
 
-        expect(pull_request.new_commits).to eq([commit])
-      end
-    end
+      context 'commits with review after' do
+        let(:review_commit_id) { commit_sha }
 
-    context 'commits with review after' do
-      specify do
-        allow(pull_request).to receive(:reviews).and_return([review])
-        allow(pull_request).to receive(:commits).and_return([commit])
-
-        expect(pull_request.new_commits).to eq([])
-      end
-    end
-
-    context 'commits after a review' do
-      let(:review) do
-        {
-          id: '123456789',
-          user: { login: 'aterris' },
-          state: 'APPROVED',
-          submitted_at: '2018-01-02 10:00:00 UTC'
-        }
+        specify do
+          expect(pull_request.new_commits).to eq([another_commit])
+        end
       end
 
-      let(:prior_commit) do
-        {
-          sha: 'abc123',
-          commit: { committer: { date: '2018-01-01 10:00:00 UTC' } },
-          files: [
-            { sha: 'def456', filename: 'lib/mission_control.rb' },
-            { sha: 'ghi789', filename: 'README.md' }
-          ]
-        }
+      context 'commits prior to review' do
+        let(:review_commit_id) { 'another_commit_sha' }
+
+        specify do
+          expect(pull_request.new_commits).to eq([])
+        end
       end
 
-      specify do
-        allow(pull_request).to receive(:reviews).and_return([review])
-        allow(pull_request).to receive(:commits).and_return([prior_commit, commit])
+      context 'review with different commit sha' do
+        let(:review_commit_id) { 'no_matching_sha' }
 
-        expect(pull_request.new_commits).to eq([commit])
+        specify do
+          expect(pull_request.new_commits).to eq(commits)
+        end
       end
     end
   end
@@ -345,10 +352,9 @@ describe MissionControl::Models::PullRequest do
         'calendly/mission-control', '23', '123456789', 'Dismissed by Mission Control'
       )
 
-      expect(github_stub).to receive(:pull_request_reviews).with(
-        'calendly/mission-control', '23', :accept => 'application/vnd.github.v3+json'
-      )
       pull_request.dismiss([review])
+
+      expect(pull_request.instance_variable_get(:@reviews)).to be_nil
     end
   end
 end
