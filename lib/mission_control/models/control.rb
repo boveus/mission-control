@@ -9,8 +9,6 @@ module MissionControl::Models
       )
 
       return if response.nil? || response[:content].nil?
-      return if pull_request.update_with_master?
-
       controls = YAML.safe_load(Base64.decode64(response[:content]))
 
       controls.map do |control|
@@ -28,6 +26,8 @@ module MissionControl::Models
 
     def self.execute!(pull_request:)
       controls = Control.fetch(pull_request: pull_request)
+      return unless controls
+      return if pull_request.update_with_master?
 
       control_description = "repo: #{pull_request.repo} base_branch: #{pull_request.base_branch}"
       puts "Executing #{controls.length} Controls | #{control_description} | PR: #{pull_request.pr_number}"

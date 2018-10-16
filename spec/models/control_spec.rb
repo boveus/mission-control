@@ -68,13 +68,6 @@ describe MissionControl::Models::Control do
       MissionControl::Models::Control.fetch(pull_request: pull_request)
     end
 
-    it 'skip if pull request is an update to master' do
-      allow(pull_request).to receive(:update_with_master?).and_return(true)
-      expect(MissionControl::Models::Control).to_not receive(:new)
-
-      MissionControl::Models::Control.fetch(pull_request: pull_request)
-    end
-
     it 'fetches controls from repo' do
       expect(github_stub).to receive(:content).with(
         'calendly/mission-control',
@@ -104,6 +97,29 @@ describe MissionControl::Models::Control do
 
     before do
       allow(MissionControl::Models::Control).to receive(:fetch).and_return([code_review_control, qa_review_control])
+      allow(pull_request).to receive(:update_with_master?).and_return(false)
+    end
+
+    it 'skips execution if no config file is found' do
+      allow(MissionControl::Models::Control).to receive(:fetch).and_return(nil)
+
+      expect(code_review_control).to_not receive(:execute!)
+      expect(code_review_control).to_not receive(:dismiss_reviews!)
+      expect(qa_review_control).to_not receive(:execute!)
+      expect(qa_review_control).to_not receive(:dismiss_reviews!)
+
+      MissionControl::Models::Control.execute!(pull_request: pull_request)
+    end
+
+    it 'skips execution if pull request is an update to master' do
+      allow(pull_request).to receive(:update_with_master?).and_return(true)
+
+      expect(code_review_control).to_not receive(:execute!)
+      expect(code_review_control).to_not receive(:dismiss_reviews!)
+      expect(qa_review_control).to_not receive(:execute!)
+      expect(qa_review_control).to_not receive(:dismiss_reviews!)
+
+      MissionControl::Models::Control.execute!(pull_request: pull_request)
     end
 
     it 'executes and dissmisses reviews for all controls' do
