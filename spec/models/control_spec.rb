@@ -58,11 +58,21 @@ describe MissionControl::Models::Control do
 
       config_file = File.read('spec/fixtures/.mission-control.yml')
       allow(github_stub).to receive(:content).and_return(:content => Base64.encode64(config_file))
+      allow(pull_request).to receive(:update_with_master?).and_return(false)
     end
 
     it 'skip if no config file found in the repo' do
       allow(github_stub).to receive(:content).and_return(nil)
       expect(MissionControl::Models::Control).to_not receive(:new)
+
+      MissionControl::Models::Control.fetch(pull_request: pull_request)
+    end
+
+    it 'skip if pull request is an update to master' do
+      allow(pull_request).to receive(:update_with_master?).and_return(true)
+      expect(MissionControl::Models::Control).to_not receive(:new)
+
+      MissionControl::Models::Control.fetch(pull_request: pull_request)
     end
 
     it 'fetches controls from repo' do

@@ -16,8 +16,12 @@ module MissionControl::Models
       @payload['pull_request']['number']
     end
 
-    def last_commit
+    def last_commit_sha
       @payload['pull_request']['head']['sha']
+    end
+
+    def last_commit
+      @last_commit ||= github.commit(repo, last_commit_sha, :accept => 'application/vnd.github.v3+json')
     end
 
     def commits
@@ -28,11 +32,25 @@ module MissionControl::Models
       @payload['pull_request']['base']['ref']
     end
 
+    def last_base_branch_commit
+      @last_base_branch_commit ||= github.commits(repo, base_branch, :accept => 'application/vnd.github.v3+json').first
+    end
+
     def reviews
       @reviews ||= github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
     end
 
     # Functionality
+    def update_with_master?
+      return false unless @payload['action'] == 'synchronize'
+
+      parent_commit_shas = last_commit[:parents].map { |parent| parent[:sha] }
+
+      return false unless parent_commit_shas.count == 2
+      return false unless parent_commit_shas.include?(last_base_branch_commit[:sha])
+      return true
+    end
+
     def approved_reviews
       reviews
         .reject { |review| review[:state] == 'COMMENTED' }
@@ -67,7 +85,7 @@ module MissionControl::Models
     end
 
     def status(state:, name:, description:)
-      github.create_status(repo, last_commit, state,
+      github.create_status(repo, last_commit_sha, state,
                            context: "mission-control/#{name.parameterize}",
                            description: description)
     end

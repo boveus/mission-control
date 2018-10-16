@@ -8,7 +8,9 @@ module MissionControl::Models
         :ref => pull_request.base_branch
       )
 
-      return if response.nil? && response[:content].nil?
+      return if response.nil? || response[:content].nil?
+      return if pull_request.update_with_master?
+
       controls = YAML.safe_load(Base64.decode64(response[:content]))
 
       controls.map do |control|

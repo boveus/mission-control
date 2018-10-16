@@ -10,7 +10,7 @@ describe MissionControl::Models::PullRequest do
 
   let(:payload) do
     {
-      'action' => 'pull_request',
+      'action' => action,
       'pull_request' => {
         'head' => { 'sha' => 'abc123', 'ref' => 'branch' },
         'number' => '23',
@@ -21,6 +21,7 @@ describe MissionControl::Models::PullRequest do
       }
     }
   end
+  let(:action) { 'pull_request' }
 
   let(:pull_request) do
     MissionControl::Models::PullRequest.new(
@@ -39,18 +40,24 @@ describe MissionControl::Models::PullRequest do
     }
   end
   let(:review_commit_id) { 'abc123' }
+  let(:submitted_at_date) { '2018-03-01 10:00:00 UTC' }
 
   let(:commit) do
     {
       sha: commit_sha,
       commit: { committer: { date: committer_date } },
+      parents: parents,
       files: files
     }
   end
   let(:commit_sha) { 'abc123' }
-
-  let(:submitted_at_date) { '2018-03-01 10:00:00 UTC' }
   let(:committer_date) { '2018-02-01 10:00:00 UTC' }
+  let(:parents) do
+    [
+      { sha: 'head_commit_sha' },
+      { sha: 'base_commit_sha' }
+    ]
+  end
   let(:files) do
     [
       { sha: 'def456', filename: 'lib/mission_control.rb' },
@@ -70,9 +77,16 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
-  describe '#last_commit' do
+  describe '#last_commit_sha' do
     specify do
-      expect(pull_request.last_commit).to eq('abc123')
+      expect(pull_request.last_commit_sha).to eq('abc123')
+    end
+  end
+
+  describe '#last_commit' do
+    it 'should return commit' do
+      allow(github_stub).to receive(:commit).and_return(commit)
+      expect(pull_request.last_commit).to eq(commit)
     end
   end
 
@@ -89,10 +103,60 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
+  describe '#last_base_branch_commit' do
+    it 'should return last commit of the base branch' do
+      allow(github_stub).to receive(:commits).and_return([commit])
+      expect(pull_request.last_base_branch_commit).to eq(commit)
+    end
+  end
+
   describe '#reviews' do
     specify do
       allow(github_stub).to receive(:pull_request_reviews).and_return([review])
       expect(pull_request.reviews).to eq([review])
+    end
+  end
+
+  describe '#update_with_master?' do
+    let(:action) { 'synchronize' }
+    let(:last_base_commit) { { sha: 'base_commit_sha' } }
+
+    before do
+      allow(github_stub).to receive(:commit).and_return(commit)
+      allow(github_stub).to receive(:commits).and_return([last_base_commit])
+    end
+
+    context 'is true' do
+      specify do
+        expect(pull_request.update_with_master?).to be true
+      end
+    end
+
+    context 'is false' do
+      context 'action is not synchronize' do
+        let(:action) { 'pull_request' }
+
+        specify do
+          expect(pull_request.update_with_master?).to be false
+        end
+      end
+
+      context 'commit is not a merge commit with 2 parents' do
+        let(:parents) do
+          [{ sha: 'single_parent_sha' }]
+        end
+        specify do
+          expect(pull_request.update_with_master?).to be false
+        end
+      end
+
+      context 'parent commits do not contain last commit of base branch' do
+        let(:last_base_commit) { { sha: 'a_different_base_commit_sha' } }
+
+        specify do
+          expect(pull_request.update_with_master?).to be false
+        end
+      end
     end
   end
 
