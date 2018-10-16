@@ -23,4 +23,10 @@ Metrics/MethodLength:
   Max: 20
 
 Metrics/AbcSize:
-  Max: 20
+  Max: 25
+
+Style/RedundantReturn:
+  Enabled: false
+
+Metrics/ParameterLists:
+  Max: 6
