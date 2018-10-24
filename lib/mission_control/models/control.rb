@@ -38,14 +38,14 @@ module MissionControl::Models
 
     attr_accessor :pull_request, :name, :users, :teams, :paths, :count, :dismissal_paths
 
-    def initialize(pull_request:, name:, users:, teams: [], paths: '*', count: 1, dismissal_paths: nil)
+    def initialize(pull_request:, **controls)
       @pull_request = pull_request
-      @name = name
-      @users = users
-      @teams = teams || []
-      @paths = paths || '*'
-      @count = count || 1
-      @dismissal_paths = dismissal_paths || @paths
+      @name = controls[:name]
+      @users = controls[:users]
+      @teams = controls[:teams] || []
+      @paths = controls[:paths] || '*'
+      @count = controls[:count] || 1
+      @dismissal_paths = controls[:dismissal_paths] || @paths
     end
 
     def authorized_users

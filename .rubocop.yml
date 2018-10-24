@@ -27,6 +27,3 @@ Metrics/AbcSize:
 
 Style/RedundantReturn:
   Enabled: false
-
-Metrics/ParameterLists:
-  Enabled: false
