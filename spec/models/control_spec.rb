@@ -1,4 +1,4 @@
-wrequire 'spec_helper'
+require 'spec_helper'
 
 describe MissionControl::Models::Control do
   before do

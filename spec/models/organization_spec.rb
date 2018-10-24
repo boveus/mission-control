@@ -16,7 +16,7 @@ describe MissionControl::Models::Organization do
   describe '#teams' do
     specify do
       allow(github_stub).to receive(:org_teams).and_return([org_team])
-      expect(MissionControl::Models::Team).to receive(:new).with({ team: org_team })
+      expect(MissionControl::Models::Team).to receive(:new).with(team: org_team)
 
       organization.teams
     end
