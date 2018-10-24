@@ -48,7 +48,7 @@ module MissionControl::Models
 
       return false unless parent_commit_shas.count == 2
       return false unless parent_commit_shas.include?(last_base_branch_commit[:sha])
-      return true
+      true
     end
 
     def approved_reviews
