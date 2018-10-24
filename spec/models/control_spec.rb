@@ -3,6 +3,7 @@ require 'spec_helper'
 describe MissionControl::Models::Control do
   before do
     allow(STDOUT).to receive(:puts)
+    allow(control).to receive(:team_members).and_return(['jperalta', 'asantiago'])
   end
 
   let(:payload) do
@@ -15,6 +16,9 @@ describe MissionControl::Models::Control do
       },
       'repository' => {
         'full_name' => 'calendly/mission-control'
+      },
+      'organization' => {
+        'login' => 'nypd'
       }
     }
   end
@@ -36,6 +40,7 @@ describe MissionControl::Models::Control do
 
   let(:name) { 'Code Review' }
   let(:users) { ['aterris'] }
+  let(:teams) { ['nine-nine'] }
   let(:paths) { '*' }
   let(:count) { 1 }
   let(:dismissal_paths) { '*' }
@@ -44,6 +49,7 @@ describe MissionControl::Models::Control do
     MissionControl::Models::Control.new(
       pull_request: pull_request,
       name: name,
+      teams: teams,
       users: users,
       paths: paths,
       count: count,
@@ -53,6 +59,7 @@ describe MissionControl::Models::Control do
 
   describe '::fetch' do
     let(:github_stub) { double('github') }
+
     before do
       allow(MissionControl::Services::GithubService).to receive(:client).and_return(github_stub)
 
@@ -85,6 +92,7 @@ describe MissionControl::Models::Control do
 
       expect(controls.first.name).to eq('Code Review')
       expect(controls.first.users).to eq(%w[cboyle jperalta])
+      expect(controls.first.teams).to eq(%w[nine-nine])
       expect(controls.first.paths).to eq('*')
       expect(controls.first.count).to eq(2)
       expect(controls.first.dismissal_paths).to eq('*')
@@ -136,6 +144,36 @@ describe MissionControl::Models::Control do
     let(:dismissal_paths) { nil }
     it 'dismissal path defaults to paths' do
       expect(control.dismissal_paths).to eq(paths)
+    end
+  end
+
+  describe '#authorized_users' do
+    let(:team_members) { ['jperalta', 'asantiago'] }
+
+    before do
+      allow(control).to receive(:team_members).and_return(team_members)
+    end
+
+    context 'no teams, only user controls' do
+      let(:team_members) { [] }
+
+      it 'returns users defined in control' do
+        expect(control.authorized_users).to eq(['aterris'])
+      end
+    end
+
+    context 'no user, only team controls' do
+      let(:users) { [] }
+
+      it 'returns members of teams defined in control' do
+        expect(control.authorized_users).to eq(['jperalta', 'asantiago'])
+      end
+    end
+
+    context 'team and user controls' do
+      it 'returns members of teams defined in control' do
+        expect(control.authorized_users).to eq(['aterris', 'jperalta', 'asantiago'])
+      end
     end
   end
 
@@ -211,7 +249,7 @@ describe MissionControl::Models::Control do
 
       context 'not approved' do
         it 'set control pending in github' do
-          allow(pull_request).to receive(:approvals).and_return(['jperalta'])
+          allow(pull_request).to receive(:approvals).and_return(['cboyle'])
 
           expect(pull_request).to receive(:status).with(
             state: 'pending',
@@ -305,6 +343,52 @@ describe MissionControl::Models::Control do
         expect(pull_request).to receive(:dismiss).with([review])
 
         control.dismiss_reviews!
+      end
+    end
+  end
+
+  describe '#team_members' do
+    before do
+      allow(control).to receive(:team_members).and_call_original
+      allow_any_instance_of(MissionControl::Models::Organization).to receive(:teams).and_return(org_team)
+      allow_any_instance_of(MissionControl::Models::Team).to receive(:members).and_return(members)
+    end
+
+    let(:org_team) do
+      [MissionControl::Models::Team.new(
+        team: { name: 'Nine Nine', slug: 'nine-nine', id: 1234 }
+      )]
+    end
+    let(:members) do
+      [{ login: 'jperalta', id: 1_111_111 },
+       { login: 'asantiago', id: 2_222_222 }]
+    end
+
+    it 'returns members of teams' do
+      expect(control.team_members).to eq(['jperalta', 'asantiago'])
+    end
+
+    context 'no team controls' do
+      let(:teams) { [] }
+
+      specify do
+        expect(control.team_members).to eq([])
+      end
+    end
+
+    context 'no teams for organization' do
+      let(:org_team) { [] }
+
+      specify do
+        expect(control.team_members).to eq([])
+      end
+    end
+
+    context 'no team members in a team' do
+      let(:members) { [] }
+
+      specify do
+        expect(control.team_members).to eq([])
       end
     end
   end

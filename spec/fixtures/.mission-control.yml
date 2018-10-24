@@ -4,6 +4,8 @@
     users:
       - cboyle
       - jperalta
+    teams:
+      - nine-nine
 - qa_review:
     name: 'QA Review'
     users:

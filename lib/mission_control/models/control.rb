@@ -17,6 +17,7 @@ module MissionControl::Models
           pull_request: pull_request,
           name: control['name'],
           users: control['users'],
+          teams: control['teams'],
           paths: control['paths'],
           count: control['count'],
           dismissal_paths: control['dismissal_paths']
@@ -35,15 +36,20 @@ module MissionControl::Models
       controls.each(&:execute!)
     end
 
-    attr_accessor :pull_request, :name, :users, :paths, :count, :dismissal_paths
+    attr_accessor :pull_request, :name, :users, :teams, :paths, :count, :dismissal_paths
 
-    def initialize(pull_request:, name:, users:, paths: '*', count: 1, dismissal_paths: nil)
+    def initialize(pull_request:, name:, users:, teams: [], paths: '*', count: 1, dismissal_paths: nil)
       @pull_request = pull_request
       @name = name
       @users = users
+      @teams = teams || []
       @paths = paths || '*'
       @count = count || 1
       @dismissal_paths = dismissal_paths || @paths
+    end
+
+    def authorized_users
+      @users | team_members
     end
 
     def active?
@@ -62,10 +68,19 @@ module MissionControl::Models
       execute_dismissals! if dismissable?
     end
 
+    def team_members
+      return [] if teams.empty?
+
+      authorized_teams = pull_request.organization.teams.select do |github_team|
+        teams.include?(github_team.slug)
+      end
+      authorized_teams.map(&:members).flatten.map { |member| member[:login] }.uniq
+    end
+
     private
 
     def execute_active!
-      approvals = (pull_request.approvals & users)
+      approvals = (pull_request.approvals & authorized_users)
 
       state = approvals.length < count ? 'pending' : 'success'
       description = "Required: #{count}"
@@ -80,7 +95,7 @@ module MissionControl::Models
 
     def execute_dismissals!
       dismissals = pull_request.approved_reviews.select do |review|
-        users.include? review[:user][:login]
+        authorized_users.include? review[:user][:login]
       end
 
       pull_request.dismiss(dismissals) unless dismissals.empty?

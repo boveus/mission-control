@@ -18,6 +18,9 @@ describe MissionControl::Models::PullRequest do
       },
       'repository' => {
         'full_name' => 'calendly/mission-control'
+      },
+      'organization' => {
+        'login' => 'nypd'
       }
     }
   end
@@ -63,6 +66,14 @@ describe MissionControl::Models::PullRequest do
       { sha: 'def456', filename: 'lib/mission_control.rb' },
       { sha: 'ghi789', filename: 'README.md' }
     ]
+  end
+
+  describe '#organization' do
+    it 'initializes a new mission control organization' do
+      expect(MissionControl::Models::Organization).to receive(:new).with(organization: 'nypd')
+
+      pull_request.organization
+    end
   end
 
   describe '#repo' do

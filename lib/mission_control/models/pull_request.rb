@@ -8,6 +8,12 @@ module MissionControl::Models
     end
 
     # Getters
+    def organization
+      @organization ||= MissionControl::Models::Organization.new(
+        organization: @payload['organization']['login']
+      )
+    end
+
     def repo
       @payload['repository']['full_name']
     end
