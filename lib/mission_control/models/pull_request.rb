@@ -16,35 +16,86 @@ module MissionControl::Models
       @payload['pull_request']['number']
     end
 
-    def commit
+    def last_commit_sha
       @payload['pull_request']['head']['sha']
+    end
+
+    def last_commit
+      @last_commit ||= github.commit(repo, last_commit_sha, :accept => 'application/vnd.github.v3+json')
+    end
+
+    def commits
+      @commits ||= github.pull_request_commits(repo, pr_number, :accept => 'application/vnd.github.v3+json')
     end
 
     def base_branch
       @payload['pull_request']['base']['ref']
     end
 
+    def last_base_branch_commit
+      @last_base_branch_commit ||= github.commits(repo, base_branch, :accept => 'application/vnd.github.v3+json').first
+    end
+
+    def reviews
+      @reviews ||= github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
+    end
+
     # Functionality
+    def update_with_master?
+      return false unless @payload['action'] == 'synchronize'
+
+      parent_commit_shas = last_commit[:parents].map { |parent| parent[:sha] }
+
+      return false unless parent_commit_shas.count == 2
+      return false unless parent_commit_shas.include?(last_base_branch_commit[:sha])
+      true
+    end
+
+    def approved_reviews
+      reviews
+        .reject { |review| review[:state] == 'COMMENTED' }
+        .reverse.uniq { |review| review[:user][:login] }.reverse
+        .select { |review| review[:state] == 'APPROVED' }
+    end
+
     def approvals
-      return @approvals unless @approvals.nil?
-
-      pr_reviews = github.pull_request_reviews(repo, pr_number, :accept => 'application/vnd.github.v3+json')
-
-      last_reviews = {}
-      pr_reviews.reject! { |review| review[:state] == 'COMMENTED' }
-      pr_reviews.each { |review| last_reviews[review[:user][:login]] = review[:state] }
-
-      @approvals = (last_reviews.select { |_key, value| value == 'APPROVED' }).keys
+      approved_reviews.map { |review| review[:user][:login] }
     end
 
     def files
       @files ||= github.pull_files(repo, pr_number).map { |file| "/#{file[:filename]}" }
     end
 
+    def new_commits
+      return commits if reviews.empty?
+
+      index = commits.find_index do |commit|
+        commit[:sha] == reviews.last[:commit_id]
+      end
+
+      index.nil? ? commits : commits[index + 1..-1]
+    end
+
+    def changed_files
+      return @changed_files unless @changed_files.nil?
+
+      new_commits.map do |commit|
+        github.commit(repo, commit[:sha])[:files].map { |file| "/#{file[:filename]}" }
+      end.flatten.uniq
+    end
+
     def status(state:, name:, description:)
-      github.create_status(repo, commit, state,
+      github.create_status(repo, last_commit_sha, state,
                            context: "mission-control/#{name.parameterize}",
                            description: description)
+    end
+
+    def dismiss(reviews)
+      reviews.each do |review|
+        github.dismiss_pull_request_review(repo, pr_number, review[:id], 'Dismissed by Mission Control')
+      end
+
+      @reviews = nil
     end
 
     private

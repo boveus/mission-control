@@ -26,10 +26,20 @@ describe MissionControl::Models::Control do
     )
   end
 
+  let(:review) do
+    {
+      id: '123456789',
+      user: { login: 'aterris' },
+      state: 'APPROVED'
+    }
+  end
+
   let(:name) { 'Code Review' }
   let(:users) { ['aterris'] }
   let(:paths) { '*' }
   let(:count) { 1 }
+  let(:dismissal_paths) { '*' }
+  let(:dismiss) { nil }
 
   let(:control) do
     MissionControl::Models::Control.new(
@@ -37,7 +47,9 @@ describe MissionControl::Models::Control do
       name: name,
       users: users,
       paths: paths,
-      count: count
+      count: count,
+      dismissal_paths: dismissal_paths,
+      dismiss_enabled: dismiss
     )
   end
 
@@ -48,11 +60,14 @@ describe MissionControl::Models::Control do
 
       config_file = File.read('spec/fixtures/.mission-control.yml')
       allow(github_stub).to receive(:content).and_return(:content => Base64.encode64(config_file))
+      allow(pull_request).to receive(:update_with_master?).and_return(false)
     end
 
     it 'skip if no config file found in the repo' do
       allow(github_stub).to receive(:content).and_return(nil)
       expect(MissionControl::Models::Control).to_not receive(:new)
+
+      MissionControl::Models::Control.fetch(pull_request: pull_request)
     end
 
     it 'fetches controls from repo' do
@@ -74,6 +89,7 @@ describe MissionControl::Models::Control do
       expect(controls.first.users).to eq(%w[cboyle jperalta])
       expect(controls.first.paths).to eq('*')
       expect(controls.first.count).to eq(2)
+      expect(controls.first.dismissal_paths).to eq('*')
     end
   end
 
@@ -83,13 +99,58 @@ describe MissionControl::Models::Control do
 
     before do
       allow(MissionControl::Models::Control).to receive(:fetch).and_return([code_review_control, qa_review_control])
+      allow(pull_request).to receive(:update_with_master?).and_return(false)
     end
 
-    it 'executes all controls' do
-      expect(code_review_control).to receive(:execute!)
-      expect(qa_review_control).to receive(:execute!)
+    it 'skips execution if no config file is found' do
+      allow(MissionControl::Models::Control).to receive(:fetch).and_return(nil)
+
+      expect(code_review_control).to_not receive(:execute!)
+      expect(code_review_control).to_not receive(:dismiss_reviews!)
+      expect(qa_review_control).to_not receive(:execute!)
+      expect(qa_review_control).to_not receive(:dismiss_reviews!)
 
       MissionControl::Models::Control.execute!(pull_request: pull_request)
+    end
+
+    it 'skips execution if pull request is an update to master' do
+      allow(pull_request).to receive(:update_with_master?).and_return(true)
+
+      expect(code_review_control).to_not receive(:execute!)
+      expect(code_review_control).to_not receive(:dismiss_reviews!)
+      expect(qa_review_control).to_not receive(:execute!)
+      expect(qa_review_control).to_not receive(:dismiss_reviews!)
+
+      MissionControl::Models::Control.execute!(pull_request: pull_request)
+    end
+
+    it 'executes and dissmisses reviews for all controls' do
+      expect(code_review_control).to receive(:execute!)
+      expect(code_review_control).to receive(:dismiss_reviews!)
+      expect(qa_review_control).to receive(:execute!)
+      expect(qa_review_control).to receive(:dismiss_reviews!)
+
+      MissionControl::Models::Control.execute!(pull_request: pull_request)
+    end
+  end
+
+  describe '#initialize' do
+    let(:dismissal_paths) { nil }
+    it 'dismissal path defaults to paths' do
+      expect(control.dismissal_paths).to eq(paths)
+    end
+
+    context 'dismiss control not set' do
+      it 'defaults to true' do
+        expect(control.dismiss_enabled).to be true
+      end
+    end
+
+    context 'dismiss control set to false' do
+      let(:dismiss) { false }
+      it 'set to false' do
+        expect(control.dismiss_enabled).to be false
+      end
     end
   end
 
@@ -191,6 +252,80 @@ describe MissionControl::Models::Control do
 
           control.execute!
         end
+      end
+    end
+  end
+
+  describe '#dismissable?' do
+    context 'dismiss control set to false' do
+      let(:dismiss) { false }
+      it 'not dismissable' do
+        expect(control.dismissable?).to eq false
+      end
+    end
+    context 'all paths' do
+      it 'dismissable' do
+        allow(pull_request).to receive(:changed_files).and_return(['/lib/mission_control.rb'])
+        expect(control.dismissable?).to be true
+      end
+    end
+
+    context 'ignored paths' do
+      let(:dismissal_paths) { ['*', '!README.md'] }
+
+      context 'matching files' do
+        it 'dismissable' do
+          allow(pull_request).to receive(:changed_files).and_return(['/lib/mission_control.rb'])
+          expect(control.dismissable?).to be true
+        end
+      end
+
+      context 'no matching files' do
+        it 'not dismissable' do
+          allow(pull_request).to receive(:changed_files).and_return(['/README.md'])
+          expect(control.dismissable?).to be false
+        end
+      end
+    end
+
+    context 'ignored directory' do
+      let(:dismissal_paths) { ['*', '!specs/'] }
+
+      context 'matching files' do
+        it 'dismissable' do
+          allow(pull_request).to receive(:changed_files).and_return(['/lib/mission_control.rb'])
+          expect(control.dismissable?).to be true
+        end
+      end
+
+      context 'no matching files' do
+        it 'not dismissable' do
+          allow(pull_request).to receive(:changed_files).and_return(['/specs/mission_control_spec.rb'])
+          expect(control.dismissable?).to be false
+        end
+      end
+    end
+  end
+
+  describe '#dismiss_reviews!' do
+    context 'no reviews dismissable' do
+      it 'does not execute dismissals' do
+        allow(control).to receive(:dismissable?).and_return(false)
+
+        expect(pull_request).to_not receive(:dismiss)
+
+        control.dismiss_reviews!
+      end
+    end
+
+    context 'dismissable reviews' do
+      it 'does execute dismissals' do
+        allow(control).to receive(:dismissable?).and_return(true)
+        allow(pull_request).to receive(:approved_reviews).and_return([review])
+
+        expect(pull_request).to receive(:dismiss).with([review])
+
+        control.dismiss_reviews!
       end
     end
   end
