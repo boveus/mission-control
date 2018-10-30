@@ -20,7 +20,8 @@ module MissionControl::Models
           teams: control['teams'],
           paths: control['paths'],
           count: control['count'],
-          dismissal_paths: control['dismissal_paths']
+          dismissal_paths: control['dismissal_paths'],
+          dismiss_enabled: control['dismiss']
         )
       end
     end
@@ -36,7 +37,7 @@ module MissionControl::Models
       controls.each(&:execute!)
     end
 
-    attr_accessor :pull_request, :name, :users, :teams, :paths, :count, :dismissal_paths
+    attr_accessor :pull_request, :name, :users, :teams, :paths, :count, :dismissal_paths, :dismiss_enabled
 
     def initialize(pull_request:, **controls)
       @pull_request = pull_request
@@ -46,6 +47,7 @@ module MissionControl::Models
       @paths = controls[:paths] || '*'
       @count = controls[:count] || 1
       @dismissal_paths = controls[:dismissal_paths] || @paths
+      @dismiss_enabled = controls[:dismiss_enabled].nil? || controls[:dismiss_enabled]
     end
 
     def authorized_users
@@ -61,6 +63,7 @@ module MissionControl::Models
     end
 
     def dismissable?
+      return false unless dismiss_enabled
       PathSpec.from_lines(@dismissal_paths).match_paths(pull_request.changed_files).any?
     end
 

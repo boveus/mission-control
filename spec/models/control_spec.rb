@@ -44,6 +44,7 @@ describe MissionControl::Models::Control do
   let(:paths) { '*' }
   let(:count) { 1 }
   let(:dismissal_paths) { '*' }
+  let(:dismiss) { nil }
 
   let(:control) do
     MissionControl::Models::Control.new(
@@ -53,7 +54,8 @@ describe MissionControl::Models::Control do
       users: users,
       paths: paths,
       count: count,
-      dismissal_paths: dismissal_paths
+      dismissal_paths: dismissal_paths,
+      dismiss_enabled: dismiss
     )
   end
 
@@ -144,6 +146,19 @@ describe MissionControl::Models::Control do
     let(:dismissal_paths) { nil }
     it 'dismissal path defaults to paths' do
       expect(control.dismissal_paths).to eq(paths)
+    end
+
+    context 'dismiss control not set' do
+      it 'defaults to true' do
+        expect(control.dismiss_enabled).to be true
+      end
+    end
+
+    context 'dismiss control set to false' do
+      let(:dismiss) { false }
+      it 'set to false' do
+        expect(control.dismiss_enabled).to be false
+      end
     end
   end
 
@@ -280,6 +295,12 @@ describe MissionControl::Models::Control do
   end
 
   describe '#dismissable?' do
+    context 'dismiss control set to false' do
+      let(:dismiss) { false }
+      it 'not dismissable' do
+        expect(control.dismissable?).to eq false
+      end
+    end
     context 'all paths' do
       it 'dismissable' do
         allow(pull_request).to receive(:changed_files).and_return(['/lib/mission_control.rb'])

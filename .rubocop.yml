@@ -20,10 +20,7 @@ Style/Documentation:
   Enabled: false
 
 Metrics/MethodLength:
-  Max: 20
+  Max: 25
 
 Metrics/AbcSize:
   Max: 25
-
-Style/RedundantReturn:
-  Enabled: false
