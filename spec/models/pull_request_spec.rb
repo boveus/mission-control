@@ -105,7 +105,7 @@ describe MissionControl::Models::PullRequest do
 
   describe '#last_base_branch_commit' do
     it 'should return last commit of the base branch' do
-      allow(github_stub).to receive(:commits).and_return([commit])
+      allow(github_stub).to receive(:commit).and_return(commit)
       expect(pull_request.last_base_branch_commit).to eq(commit)
     end
   end
@@ -122,8 +122,7 @@ describe MissionControl::Models::PullRequest do
     let(:last_base_commit) { { sha: 'base_commit_sha' } }
 
     before do
-      allow(github_stub).to receive(:commit).and_return(commit)
-      allow(github_stub).to receive(:commits).and_return([last_base_commit])
+      allow(github_stub).to receive(:commit).and_return(commit, last_base_commit)
     end
 
     context 'is true' do
