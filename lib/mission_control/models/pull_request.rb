@@ -33,7 +33,7 @@ module MissionControl::Models
     end
 
     def last_base_branch_commit
-      @last_base_branch_commit ||= github.commit(repo, base_branch, :accept => 'application/vnd.github.v3+json')
+      @last_base_branch_commit ||= github.commits(repo, base_branch, :accept => 'application/vnd.github.v3+json').first
     end
 
     def reviews
