@@ -2,8 +2,6 @@ require 'bundler'
 Bundler.require(:default)
 require 'active_support/all'
 require 'yaml'
-require 'logger'
-require 'pry'
 
 Dotenv.load
 

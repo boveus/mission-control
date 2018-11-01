@@ -13,12 +13,6 @@ if ENV['AIRBRAKE_PROJECT_ID'] && ENV['AIRBRAKE_API_KEY']
   end
 end
 
-configure :test, :development do
-  logger = Logger.new(STDOUT)
-  logger.level = Logger::DEBUG
-  use Rack::CommonLogger, logger
-end
-
 # sync stdout so puts shows in heroku logs
 $stdout.sync = true
 
