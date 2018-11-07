@@ -76,10 +76,21 @@ module MissionControl::Models
       index.nil? ? commits : commits[index + 1..-1]
     end
 
+    def commits_with_changes
+      new_commits.reject do |commit|
+        parent_shas = commit[:parents].map { |parent| parent[:sha] }
+
+        next false if parent_shas.count == 1
+
+        parent_shas.any? do |sha|
+          ['behind', 'identical'].include?(github.compare(repo, base_branch, sha)['status'])
+        end
+      end
+    end
+
     def changed_files
       return @changed_files unless @changed_files.nil?
-
-      new_commits.map do |commit|
+      commits_with_changes.map do |commit|
         github.commit(repo, commit[:sha])[:files].map { |file| "/#{file[:filename]}" }
       end.flatten.uniq
     end

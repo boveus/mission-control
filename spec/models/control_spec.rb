@@ -99,22 +99,10 @@ describe MissionControl::Models::Control do
 
     before do
       allow(MissionControl::Models::Control).to receive(:fetch).and_return([code_review_control, qa_review_control])
-      allow(pull_request).to receive(:update_with_master?).and_return(false)
     end
 
     it 'skips execution if no config file is found' do
       allow(MissionControl::Models::Control).to receive(:fetch).and_return(nil)
-
-      expect(code_review_control).to_not receive(:execute!)
-      expect(code_review_control).to_not receive(:dismiss_reviews!)
-      expect(qa_review_control).to_not receive(:execute!)
-      expect(qa_review_control).to_not receive(:dismiss_reviews!)
-
-      MissionControl::Models::Control.execute!(pull_request: pull_request)
-    end
-
-    it 'skips execution if pull request is an update to master' do
-      allow(pull_request).to receive(:update_with_master?).and_return(true)
 
       expect(code_review_control).to_not receive(:execute!)
       expect(code_review_control).to_not receive(:dismiss_reviews!)
@@ -257,12 +245,24 @@ describe MissionControl::Models::Control do
   end
 
   describe '#dismissable?' do
+    before do
+      allow(pull_request).to receive(:update_with_master?).and_return(false)
+    end
+
     context 'dismiss control set to false' do
       let(:dismiss) { false }
       it 'not dismissable' do
         expect(control.dismissable?).to eq false
       end
     end
+
+    context 'pull request is update wiuth master' do
+      it 'not dismissable' do
+        allow(pull_request).to receive(:update_with_master?).and_return(true)
+        expect(control.dismissable?).to eq false
+      end
+    end
+
     context 'all paths' do
       it 'dismissable' do
         allow(pull_request).to receive(:changed_files).and_return(['/lib/mission_control.rb'])

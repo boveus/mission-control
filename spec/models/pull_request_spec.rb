@@ -365,6 +365,21 @@ describe MissionControl::Models::PullRequest do
     end
   end
 
+  describe '#commits_with_changes' do
+    let(:another_commit) do
+      { sha: 'another_commit_sha', parents: [{ sha: 'head_commit_sha' }] }
+    end
+    let(:compare_branch_commit) { { 'status' => 'ahead' } }
+    let(:compare_master_update) { { 'status' => 'behind' } }
+
+    it 'rejects commits that are updates with base branch' do
+      allow(pull_request).to receive(:new_commits).and_return([commit, another_commit])
+      allow(github_stub).to receive(:compare).and_return(compare_branch_commit, compare_master_update)
+
+      expect(pull_request.commits_with_changes).to eq([another_commit])
+    end
+  end
+
   describe '#changed_files' do
     context 'no new commits' do
       specify do
@@ -387,7 +402,7 @@ describe MissionControl::Models::PullRequest do
       end
 
       specify do
-        allow(pull_request).to receive(:new_commits).and_return([commit, another_commit])
+        allow(pull_request).to receive(:commits_with_changes).and_return([commit, another_commit])
         allow(github_stub).to receive(:commit).and_return(commit, another_commit)
 
         expect(pull_request.changed_files).to eq(%w[/lib/mission_control.rb /README.md /spec/mission_control_spec.rb])

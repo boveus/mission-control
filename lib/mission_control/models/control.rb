@@ -28,10 +28,10 @@ module MissionControl::Models
     def self.execute!(pull_request:)
       controls = Control.fetch(pull_request: pull_request)
       return unless controls
-      return if pull_request.update_with_master?
 
       control_description = "repo: #{pull_request.repo} base_branch: #{pull_request.base_branch}"
       puts "Executing #{controls.length} Controls | #{control_description} | PR: #{pull_request.pr_number}"
+
       controls.each(&:dismiss_reviews!)
       controls.each(&:execute!)
     end
@@ -58,6 +58,7 @@ module MissionControl::Models
 
     def dismissable?
       return false unless dismiss_enabled
+      return false if pull_request.update_with_master?
       PathSpec.from_lines(@dismissal_paths).match_paths(pull_request.changed_files).any?
     end
 
