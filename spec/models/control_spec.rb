@@ -126,12 +126,16 @@ describe MissionControl::Models::Control do
       end
 
       it 'active for subdirectory that contains part of an ignored path' do
-        allow(pull_request).to receive(:files).and_return(['/services/deployment/service_object.rb'])
+        allow(pull_request).to receive(:files).and_return(
+          ['/services/deployment/service_object.rb']
+        )
         expect(control.active?).to be true
       end
 
       it 'inactive' do
-        allow(pull_request).to receive(:files).and_return(['/specs/mission_control_spec.rb', '/deployment/initializer.rb'])
+        allow(pull_request).to receive(:files).and_return(
+          ['/specs/mission_control_spec.rb', '/deployment/initializer.rb']
+        )
         expect(control.active?).to be false
       end
     end
